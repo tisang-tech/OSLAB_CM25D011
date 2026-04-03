@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OS Theory: Dining Philosophers</title>
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+    <style>
+        :root {
+            --gold: #ffcc00;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #38bdf8;
+        }
+        body { background: var(--bg); color: #f1f5f9; font-family: 'Inter', system-ui, sans-serif; margin: 0; padding: 0; }
+        
+        /* Navigation Bar */
+        nav { 
+            background: rgba(15, 23, 42, 0.9); 
+            backdrop-filter: blur(10px);
+            padding: 20px; 
+            display: flex; 
+            justify-content: center; 
+            gap: 40px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            border-bottom: 1px solid #334155; 
+        }
+        nav a { color: #94a3b8; text-decoration: none; font-weight: 600; cursor: pointer; transition: 0.3s; font-size: 1.1rem; }
+        nav a:hover, nav a.active-link { color: var(--gold); }
+
+        .page { display: none; padding: 50px 20px; max-width: 900px; margin: 0 auto; animation: fadeIn 0.4s ease-out; }
+        .active { display: block; }
+
+        /* Simulation View */
+        .table-area { position: relative; width: 450px; height: 450px; margin: 0 auto; }
+        .table-base { position: absolute; width: 400px; height: 400px; background: #334155; border-radius: 50%; border: 10px solid #1e293b; left: 25px; top: 25px; box-shadow: inset 0 0 50px #000; }
+        .phil { position: absolute; width: 75px; height: 75px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); border: 4px solid #0f172a; z-index: 10; }
+        .thinking { background: #64748b; color: #f1f5f9; }
+        .waiting { background: #f59e0b; color: #000; box-shadow: 0 0 20px rgba(245, 158, 11, 0.5); }
+        .eating { background: #10b981; color: #fff; transform: scale(1.15); box-shadow: 0 0 35px rgba(16, 185, 129, 0.6); }
+
+        /* Theory Page Layout */
+        .theory-card { background: var(--card); padding: 40px; border-radius: 16px; border: 1px solid #334155; line-height: 1.8; }
+        .theory-card h1 { margin-top: 0; color: var(--gold); border-bottom: 2px solid #334155; padding-bottom: 10px; }
+        .concept-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 25px 0; }
+        .concept-item { background: #0f172a; padding: 15px; border-radius: 8px; border-left: 4px solid var(--accent); }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<nav id="navbar">
+    <a onclick="showPage('sim', this)" class="active-link">Live Visualizer</a>
+    <a onclick="showPage('guide', this)">User Guide</a>
+    <a onclick="showPage('theory', this)">Core Theory</a>
+</nav>
+
+<div id="sim" class="page active">
+    <h2 style="text-align:center; color: var(--accent);">Real-Time Synchronization</h2>
+    <div class="table-area">
+        <div class="table-base"></div>
+        <div id="render-target"></div>
+    </div>
+    <div style="text-align:center; margin-top: 40px; color: #94a3b8;">
+        <span style="margin: 0 10px;">🔵 Thinking</span>
+        <span style="margin: 0 10px;">🟡 Hungry</span>
+        <span style="margin: 0 10px;">🟢 Eating</span>
+    </div>
+</div>
+
+<div id="guide" class="page">
+    <div class="theory-card">
+        <h1>How to Observe</h1>
+        <p>This application simulates how an Operating System manages multiple processes competing for shared resources.</p>
+        <ol>
+            <li><strong>The Setup:</strong> There are 5 Philosophers (Processes) and 5 Chopsticks (Resources).</li>
+            <li><strong>The Rule:</strong> To move into the <em>Green State</em>, a philosopher must lock two semaphores.</li>
+            <li><strong>Watch for the "Wait":</strong> When a philosopher turns orange, notice their neighbor is likely green. This demonstrates <strong>Mutual Exclusion</strong>.</li>
+        </ol>
+    </div>
+</div>
+
+<div id="theory" class="page">
+    <div class="theory-card">
+        <h1>Operating System Theory</h1>
+        <p>The Dining Philosophers problem (Edsger Dijkstra, 1965) is the standard model for understanding <strong>Concurrency Control</strong>.</p>
+
+        <div class="concept-grid">
+            <div class="concept-item">
+                <h3 style="color: var(--accent); margin: 0;">Deadlock</h3>
+                <p style="font-size: 0.9rem;">A state where every process is waiting for a resource held by another, creating a permanent freeze.</p>
+            </div>
+            <div class="concept-item">
+                <h3 style="color: var(--accent); margin: 0;">Starvation</h3>
+                <p style="font-size: 0.9rem;">When a process is perpetually denied the resources it needs to make progress.</p>
+            </div>
+            <div class="concept-item">
+                <h3 style="color: var(--accent); margin: 0;">Mutex</h3>
+                <p style="font-size: 0.9rem;">A "Mutual Exclusion" object that acts as a lock to ensure only one process accesses a resource.</p>
+            </div>
+            <div class="concept-item">
+                <h3 style="color: var(--accent); margin: 0;">Critical Section</h3>
+                <p style="font-size: 0.9rem;">The segment of code (or time) where shared resources are accessed—here, it is the 'Eating' state.</p>
+            </div>
+        </div>
+
+        <h2>Our Solution: Resource Hierarchy</h2>
+        <p>We solve the deadlock by breaking the <strong>Circular Wait</strong> condition. In our simulation, we number the philosophers 0–4. While P0–P3 pick up their Left chopstick first, <strong>P4 picks up its Right chopstick first</strong>. This simple change ensures that at least one philosopher can always eat.</p>
+        
+    </div>
+</div>
+
+<script>
+    function showPage(pageId, el) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('nav a').forEach(a => a.classList.remove('active-link'));
+        document.getElementById(pageId).classList.add('active');
+        el.classList.add('active-link');
+    }
+</script>
+
+<script type="py">
+    import asyncio
+    import random
+    import math
+    from pyscript import document
+
+    N = 5
+    locks = [asyncio.Lock() for _ in range(N)]
+
+    async def run_philosopher(i):
+        el = document.querySelector(f"#phil-{i}")
+        while True:
+            # Thinking State
+            el.className = "phil thinking"
+            await asyncio.sleep(random.uniform(3, 5))
+            
+            # Hungry State (Attempting to acquire locks)
+            el.className = "phil waiting"
+            left, right = i, (i + 1) % N
+            
+            # The "Breaking the Circle" Strategy
+            first, second = (right, left) if i == N-1 else (left, right)
+
+            async with locks[first]:
+                await asyncio.sleep(1.2) # Simulate delay to grab second
+                async with locks[second]:
+                    # Eating State (Critical Section)
+                    el.className = "phil eating"
+                    await asyncio.sleep(random.uniform(4, 7))
+
+    # Initialize Visuals
+    container = document.querySelector("#render-target")
+    for i in range(N):
+        angle = (i * 2 * math.pi) / N
+        p = document.createElement("div")
+        p.id = f"phil-{i}"
+        p.innerText = f"P{i}"
+        p.className = "phil thinking"
+        p.style.left = f"{187 + 175 * math.cos(angle)}px"
+        p.style.top = f"{187 + 175 * math.sin(angle)}px"
+        container.appendChild(p)
+
+    for i in range(N):
+        asyncio.ensure_future(run_philosopher(i))
+</script>
+
+</body>
+</html>
